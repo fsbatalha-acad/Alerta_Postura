@@ -23,7 +23,7 @@ Execute o programa:
    ```bash
    python main.py
    ```
----
+
 
 ## 🚀 Comandos do Git no Terminal
 
