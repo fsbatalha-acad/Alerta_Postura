@@ -1,0 +1,16 @@
+# Pastas pesadas geradas pelo PyInstaller
+dist/
+build/
+*.spec
+
+# Arquivos de Inteligência Artificial pesados (o link para download vai no Readme)
+*.task
+
+# Arquivos locais de relatório gerados por testes
+relatorio_postura.txt
+
+# Ambientes virtuais e cache do Python
+__pycache__/
+venv/
+.venv/
+.env
