@@ -17,8 +17,9 @@ Este projeto é uma aplicação de visão computacional em Python que monitora a
    ```
    
 2. Baixe o modelo de IA do MediaPipe (pose_landmarker_full.task) e coloque-o na pasta raiz.
-
+---
 Execute o programa:
+---
 
    ```bash
    python main.py
