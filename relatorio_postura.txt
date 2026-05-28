@@ -1,0 +1,10 @@
+=============================================
+       RELATÓRIO DE SAÚDE ERGONÔMICA       
+=============================================
+ Data/Hora do Fim: 27/05/2026 22:31:02
+---------------------------------------------
+ • Tempo Total Monitorado: 0m 38s
+ • Alertas de Postura Emitidos: 3 vez(es)
+ • Tempo em Postura Correta: 0m 25s (67.5% do tempo)
+ • Tempo em Postura Inadequada: 0m 12s (32.5% do tempo)
+=============================================
