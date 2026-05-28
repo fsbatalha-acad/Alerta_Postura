@@ -11,6 +11,7 @@ Este projeto é uma aplicação de visão computacional em Python que monitora a
 ## 🚀 Como Rodar o Projeto
 
 1. Instale as dependências necessárias:
+
    ```bash
    pip install opencv-python mediapipe
    ```
@@ -19,9 +20,9 @@ Baixe o modelo de IA do MediaPipe (pose_landmarker_full.task) e coloque-o na pas
 
 Execute o programa:
 
-```bash
-python main.py
-```
+   ```bash
+   python main.py
+   ```
 ---
 
 ## 🚀 Passo 3: Comandos do Git no Terminal
@@ -30,6 +31,6 @@ Agora, abra o terminal do VS Code dentro da pasta do projeto e execute a sequên
 
 ### 1. Inicializar o repositório local
 
-```bash
-git init
-```
+   ```bash
+   git init
+   ```
