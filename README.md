@@ -21,6 +21,7 @@ Execute o programa:
 
 ```bash
 python main.py
+```
 ---
 
 ## 🚀 Passo 3: Comandos do Git no Terminal
@@ -28,6 +29,7 @@ python main.py
 Agora, abra o terminal do VS Code dentro da pasta do projeto e execute a sequência de comandos abaixo:
 
 ### 1. Inicializar o repositório local
+
 ```bash
 git init
 ```
