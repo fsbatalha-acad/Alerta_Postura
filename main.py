@@ -3,6 +3,7 @@ import mediapipe as mp
 import time
 import os
 import sys
+import winsound  # Biblioteca nativa do Windows para emitir bipes
 
 # Função para garantir que o executável ache o arquivo da IA
 def encontra_caminho_recurso(caminho_relativo):
@@ -29,10 +30,13 @@ calibrado = False
 tempo_inicio_postura_ruim = None  
 
 # VARIÁVEIS PARA O RELATÓRIO
-contador_alertas = 0             # Quantidade de vezes que o alerta vermelho ativou
-tempo_total_postura_ruim = 0.0   # Acumulador de tempo em postura inadequada
-alerta_ativo_atualmente = False  # Flag para saber se o alerta já estava computado
-momento_inicio_alerta = None     # Marca o início do alerta crítico
+contador_alertas = 0             
+tempo_total_postura_ruim = 0.0   
+alerta_ativo_atualmente = False  
+momento_inicio_alerta = None     
+
+# Controle para o bip não travar a imagem da câmera
+ultimo_bip = 0
 
 # Variáveis globais para os comandos dos botões
 comando_calibrar = False
@@ -42,11 +46,8 @@ comando_encerrar = False
 def detectar_clique(event, x, y, flags, param):
     global comando_calibrar, comando_encerrar
     if event == cv2.EVENT_LBUTTONDOWN:  
-        # Verifica se o clique foi na área do Botão Calibrar (no lado direito da faixa, Y entre 5 e 45)
         if largura_tela - 200 <= x <= largura_tela - 110 and 5 <= y <= 45:
             comando_calibrar = True
-        
-        # Verifica se o clique foi na área do Botão Sair (no lado direito da faixa, Y entre 5 e 45)
         if largura_tela - 100 <= x <= largura_tela - 10 and 5 <= y <= 45:
             comando_encerrar = True
 
@@ -55,11 +56,10 @@ webcam = cv2.VideoCapture(0)
 cv2.namedWindow("Monitor de Postura")
 cv2.setMouseCallback("Monitor de Postura", detectar_clique)
 
-# Guarda o momento exato em que o monitoramento começou de verdade
 tempo_inicio_sessao = None
 
 with PoseLandmarker.create_from_options(options) as landmarker:
-    print("APLICAÇÃO INICIADA COM SUCESSO!")
+    print("APLICAÇÃO INICIADA COM ALERTA SONORO E VISUAL LIMPO!")
     
     while webcam.isOpened():
         sucesso, frame = webcam.read()
@@ -79,28 +79,31 @@ with PoseLandmarker.create_from_options(options) as landmarker:
 
         if resultado.pose_landmarks:
             for landmarks in resultado.pose_landmarks:
+                pos_x_nariz = int(landmarks[0].x * largura_tela)
                 pos_y_nariz = int(landmarks[0].y * altura_tela)
+                
+                pos_x_ombro_esq = int(landmarks[11].x * largura_tela)
                 pos_y_ombro_esq = int(landmarks[11].y * altura_tela)
+                
+                pos_x_ombro_dir = int(landmarks[12].x * largura_tela)
                 pos_y_ombro_dir = int(landmarks[12].y * altura_tela)
 
                 y_linha_ombros = (pos_y_ombro_esq + pos_y_ombro_dir) / 2
                 y_nariz = pos_y_nariz
 
-                # Desenha os pontos de feedback da IA
-                cv2.circle(frame, (int(landmarks[0].x * largura_tela), pos_y_nariz), 6, (255, 255, 0), cv2.FILLED)
-                cv2.circle(frame, (int(landmarks[11].x * largura_tela), pos_y_ombro_esq), 6, (0, 255, 255), cv2.FILLED)
-                cv2.circle(frame, (int(landmarks[12].x * largura_tela), pos_y_ombro_dir), 6, (0, 255, 255), cv2.FILLED)
+                # Desenha APENAS os pontos discretos de feedback por cima do vídeo
+                cv2.circle(frame, (pos_x_nariz, pos_y_nariz), 6, (255, 255, 0), cv2.FILLED)
+                cv2.circle(frame, (pos_x_ombro_esq, pos_y_ombro_esq), 6, (0, 255, 255), cv2.FILLED)
+                cv2.circle(frame, (pos_x_ombro_dir, pos_y_ombro_dir), 6, (0, 255, 255), cv2.FILLED)
 
-        # LÓGICA DO BOTÃO CALIBRAR
         if comando_calibrar:
             comando_calibrar = False  
             if y_nariz is not None and y_linha_ombros is not None:
                 distancia_referencia = y_linha_ombros - y_nariz
                 calibrado = True
-                tempo_inicio_sessao = time.time() # Inicia a contagem do tempo total
+                tempo_inicio_sessao = time.time()
                 print("Sistema Calibrado!")
 
-        # LÓGICA DE EXIBIÇÃO DE STATUS E ACUMULAÇÃO DE DADOS
         postura_critica = False
         texto_status = ""
         cor_texto = (0, 0, 0) 
@@ -128,6 +131,11 @@ with PoseLandmarker.create_from_options(options) as landmarker:
                             contador_alertas += 1
                             alerta_ativo_atualmente = True
                             momento_inicio_alerta = time.time()
+                            
+                        # Emissão do som a cada 1.5 segundos
+                        if time.time() - ultimo_bip > 1.5:
+                            winsound.Beep(1000, 250) 
+                            ultimo_bip = time.time()
                     else:
                         tempo_restante = 5 - int(segundos_passados)
                         texto_status = f"Postura Ruim... Alertando em: {tempo_restante}s"
@@ -142,12 +150,11 @@ with PoseLandmarker.create_from_options(options) as landmarker:
                         tempo_total_postura_ruim += tempo_duracao_alerta
                         alerta_ativo_atualmente = False
 
-        # 1. Cria o overlay transparente da faixa branca
+        # Interface gráfica moderna com transparência
         overlay = frame.copy()
         cv2.rectangle(overlay, (0, 0), (largura_tela, 50), (255, 255, 255), cv2.FILLED)
         cv2.addWeighted(overlay, 0.5, frame, 0.5, 0, frame)
         
-        # 2. Renderiza textos e botões na tela
         cv2.putText(frame, texto_status, (20, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.6, cor_texto, 2)
         cv2.rectangle(frame, (largura_tela - 200, 5), (largura_tela - 110, 45), (0, 180, 0), cv2.FILLED)
         cv2.putText(frame, "CALIBRAR", (largura_tela - 185, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 2)
@@ -167,23 +174,18 @@ with PoseLandmarker.create_from_options(options) as landmarker:
 webcam.release()
 cv2.destroyAllWindows()
 
-# --- CONSTRUÇÃO E GRAVAÇÃO DO RELATÓRIO ERGONÔMICO ---
+# Processamento do relatório final (TXT)
 if calibrado and tempo_inicio_sessao is not None:
     tempo_total_monitorado = time.time() - tempo_inicio_sessao
-    
-    # Nova Lógica: Tempo Correto = Tempo Total - Tempo Ruim
     tempo_total_postura_correta = max(0.0, tempo_total_monitorado - tempo_total_postura_ruim)
     
-    # Conversões para formato legível (Minutos e Segundos)
     m_tot, s_tot = divmod(int(tempo_total_monitorado), 60)
     m_ruim, s_ruim = divmod(int(tempo_total_postura_ruim), 60)
     m_corr, s_corr = divmod(int(tempo_total_postura_correta), 60)
     
-    # Cálculos de porcentagem
     porcentagem_ruim = (tempo_total_postura_ruim / tempo_total_monitorado) * 100 if tempo_total_monitorado > 0 else 0
     porcentagem_correta = (tempo_total_postura_correta / tempo_total_monitorado) * 100 if tempo_total_monitorado > 0 else 0
 
-    # Monta a string do relatório
     relatorio_texto = (
         "=============================================\n"
         "       RELATÓRIO DE SAÚDE ERGONÔMICA       \n"
@@ -197,10 +199,8 @@ if calibrado and tempo_inicio_sessao is not None:
         "=============================================\n"
     )
     
-    # 1. Mostra o relatório no terminal
     print("\n" + relatorio_texto)
     
-    # 2. SALVA NO ARQUIVO .TXT
     try:
         with open("relatorio_postura.txt", "w", encoding="utf-8") as arquivo:
             arquivo.write(relatorio_texto)
