@@ -35,7 +35,8 @@ Agora, abra o terminal do VS Code dentro da pasta do projeto e execute a sequên
    ```bash
    git init
    ```
-📦 Como Gerar o Aplicativo Executável
+
+## 📦 Como Gerar o Aplicativo Executável
 Como os arquivos de build e o próprio executável final ficam muito pesados para serem hospedados no GitHub (passam do limite de 100 MB), você pode gerar o aplicativo na sua própria máquina usando o PyInstaller.
 
 Basta abrir o terminal na pasta do projeto e rodar o comando abaixo:
