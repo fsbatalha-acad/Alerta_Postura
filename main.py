@@ -3,7 +3,8 @@ import mediapipe as mp
 import time
 import os
 import sys
-import winsound  # Biblioteca nativa do Windows para emitir bipes
+import winsound
+import numpy as np
 
 # Função para garantir que o executável ache o arquivo da IA
 def encontra_caminho_recurso(caminho_relativo):
@@ -66,12 +67,24 @@ with PoseLandmarker.create_from_options(options) as landmarker:
         if not sucesso:
             break
 
+        # 1. Espelha a imagem para ficar como um espelho natural
         frame = cv2.flip(frame, 1)
+        alpha = 1.2  # 20% a mais de contraste
+        frame = cv2.convertScaleAbs(frame, alpha=alpha) 
+
+        kernel_nitidez = np.array([[ 0, -1,  0],
+                                   [-1,  5, -1],
+                                   [ 0, -1,  0]])
+        frame = cv2.filter2D(frame, -1, kernel_nitidez)
+        # ==========================================================
+
+        # 2. Coleta as dimensões e converte a cor para a IA ler
         altura_tela, largura_tela, _ = frame.shape
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
         timestamp = int(webcam.get(cv2.CAP_PROP_POS_MSEC))
         
+        # 3. Passa o frame tratado para a IA analisar
         resultado = landmarker.detect_for_video(mp_image, timestamp)
 
         y_nariz = None
@@ -155,6 +168,7 @@ with PoseLandmarker.create_from_options(options) as landmarker:
         cv2.rectangle(overlay, (0, 0), (largura_tela, 50), (255, 255, 255), cv2.FILLED)
         cv2.addWeighted(overlay, 0.5, frame, 0.5, 0, frame)
         
+        # Desenho do HUD informativo e botões
         cv2.putText(frame, texto_status, (20, 33), cv2.FONT_HERSHEY_SIMPLEX, 0.6, cor_texto, 2)
         cv2.rectangle(frame, (largura_tela - 200, 5), (largura_tela - 110, 45), (0, 180, 0), cv2.FILLED)
         cv2.putText(frame, "CALIBRAR", (largura_tela - 185, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 2)
@@ -201,10 +215,23 @@ if calibrado and tempo_inicio_sessao is not None:
     
     print("\n" + relatorio_texto)
     
+    # ==========================================================
+    # LOGICA DE GERENCIAMENTO DE DIRETÓRIO PARA SALVAMENTO
+    # ==========================================================
+    pasta_destino = "relatorios"
+    # Garante a criação da pasta caso ela não exista no diretório atual
+    os.makedirs(pasta_destino, exist_ok=True)
+    
+    # Geração do nome do arquivo com carimbo de data/hora
+    data_hora_arquivo = time.strftime('%Y-%m-%d_%Hh%Mm%Ss')
+    # os.path.join monta o caminho correto (ex: relatorios/relatorio_postura_...)
+    nome_arquivo = os.path.join(pasta_destino, f"relatorio_postura_{data_hora_arquivo}.txt")
+    # ==========================================================
+    
     try:
-        with open("relatorio_postura.txt", "w", encoding="utf-8") as arquivo:
+        with open(nome_arquivo, "w", encoding="utf-8") as arquivo:
             arquivo.write(relatorio_texto)
-        print("💾 Relatório salvo com sucesso em 'relatorio_postura.txt'!")
+        print(f"💾 Relatório salvo com sucesso em '{nome_arquivo}'!")
     except Exception as e:
         print(f"❌ Erro ao salvar o arquivo de texto: {e}")
 else:

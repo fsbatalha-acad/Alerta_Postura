@@ -1,19 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import collect_all
-
-datas = [('pose_landmarker_full.task', '.')]
-binaries = []
-hiddenimports = []
-tmp_ret = collect_all('mediapipe')
-datas += tmp_ret[0]; binaries += tmp_ret[1]; hiddenimports += tmp_ret[2]
 
 
 a = Analysis(
     ['main.py'],
     pathex=[],
-    binaries=binaries,
-    datas=datas,
-    hiddenimports=hiddenimports,
+    binaries=[],
+    datas=[('pose_landmarker_full.task', '.')],
+    hiddenimports=['mediapipe.python._framework_bindings.image', 'mediapipe.python._framework_bindings.image_frame'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

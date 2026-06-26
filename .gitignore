@@ -6,11 +6,15 @@ build/
 # Arquivos de Inteligência Artificial pesados (o link para download vai no Readme)
 *.task
 
-# Arquivos locais de relatório gerados por testes
-relatorio_postura.txt
+# Arquivos e pastas locais de relatórios gerados por testes
+relatorios/
 
 # Ambientes virtuais e cache do Python
 __pycache__/
 venv/
 .venv/
 .env
+
+# Arquivo executável gerado pelo PyInstaller
+*.exe
+*.rar
